@@ -1,32 +1,29 @@
 /**
- * 腾讯 CodeBuddy 每日全自动保活与算力签到脚本
+ * 腾讯 CodeBuddy 每日全自动保活与算力签到脚本 (纯远程纯 BoxJS / QX 标准版)
  * 
  * [task_local]
- * 0 9,21 * * * codebuddy_checkin.js, tag=腾讯CodeBuddy自动签到保活, img-url=https://raw.githubusercontent.com/DGZSbot/ai-icon/refs/heads/main/WorkBuddy.png, enabled=true
- * 
- * 凭据配置方式：
- * 脚本优先从 QX 本地偏好设置读取 $prefs.valueForKey("codebuddy_token")
- * 若未设置，回落到本地 8088 Antigravity 代理获取或在下方填入自用 Token (公开发布请留空)
+ * 0 9,21 * * * https://raw.githubusercontent.com/YueBtt/codebuddy-daily-task/main/codebuddy_checkin.js, tag=腾讯CodeBuddy自动签到保活, img-url=https://raw.githubusercontent.com/DGZSbot/ai-icon/refs/heads/main/WorkBuddy.png, enabled=true
  */
 
 const $ = new Env("腾讯CodeBuddy自动签到");
 
 const APP_NAME = "CodeBuddy 签到";
-// 绝对脱敏：公网开源仓库严禁硬编码任何真实凭据！
-const FALLBACK_TOKEN = ""; 
-const FALLBACK_UID = "";
 
 async function main() {
-  let token = $.getdata("codebuddy_token") || FALLBACK_TOKEN;
-  let uid = $.getdata("codebuddy_uid") || FALLBACK_UID;
+  // 1. 尝试从 QX $prefs / BoxJS 读取
+  let token = $.getdata("codebuddy_token");
+  let uid = $.getdata("codebuddy_uid") || "";
 
-  // 如果本地没有配置，尝试直接连本地 8088 代理中转凭证
+  // 2. 如果 BoxJS / $prefs 还没填，优雅向本地 8088 代理自动拉取并自愈写入 $prefs！
   if (!token) {
     try {
       const localCreds = await fetchLocal8088Creds();
       if (localCreds && localCreds.accessToken) {
         token = localCreds.accessToken;
         uid = localCreds.uid || uid;
+        $.setdata(token, "codebuddy_token");
+        $.setdata(uid, "codebuddy_uid");
+        $.log("🎉 成功从本地 8088 代理自愈获取凭据并已自动保存进 $prefs！");
       }
     } catch (e) {
       // ignore
@@ -34,7 +31,7 @@ async function main() {
   }
 
   if (!token) {
-    $.msg(APP_NAME, "❌ 签到失败", "未检测到凭证！请在 BoxJS 或 QX $prefs 中写入 codebuddy_token");
+    $.msg(APP_NAME, "❌ 签到失败", "未检测到凭证！请在 BoxJS 或 QX 中配置 codebuddy_token");
     $.done();
     return;
   }
@@ -42,7 +39,7 @@ async function main() {
   const commonHeaders = {
     "Authorization": "Bearer " + token,
     "User-Agent": "CLI/2.63.2 CodeBuddy/2.63.2",
-    "X-User-Id": uid || "anonymous",
+    "X-User-Id": uid,
     "X-Domain": "copilot.tencent.com",
     "X-Product": "SaaS",
     "X-Requested-With": "XMLHttpRequest",
@@ -107,7 +104,7 @@ async function main() {
       "parentConversationId": cid,
       "agentName": "default",
       "agentType": "conversation",
-      "userId": uid || "anonymous"
+      "userId": uid
     }];
     const repRes = await httpPost("https://www.codebuddy.cn/v2/report", commonHeaders, JSON.stringify(ev));
     if (repRes.code === 0) {
@@ -137,16 +134,16 @@ async function main() {
 }
 
 function fetchLocal8088Creds() {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     $.get({
-      url: "http://127.0.0.1:8088/api/cb_accounts",
+      url: "http://127.0.0.1:8088/api/cb_token_raw",
       timeout: 3000
     }, (err, resp, body) => {
-      if (err) return reject(err);
+      if (err || !body) return resolve(null);
       try {
         const d = JSON.parse(body);
-        if (Array.isArray(d) && d.length > 0) {
-          resolve({ uid: d[0].uid });
+        if (d && d.accessToken) {
+          resolve(d);
         } else {
           resolve(null);
         }
