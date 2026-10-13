@@ -1,0 +1,48 @@
+{
+  "id": "codebuddy.app.sub",
+  "name": "腾讯 CodeBuddy 算力签到与保活订阅",
+  "author": "@YueBtt",
+  "icon": "https://raw.githubusercontent.com/DGZSbot/ai-icon/refs/heads/main/WorkBuddy.png",
+  "repo": "https://github.com/YueBtt/codebuddy-daily-task",
+  "apps": [
+    {
+      "id": "codebuddy_task",
+      "name": "腾讯 CodeBuddy 每日签到",
+      "keys": ["codebuddy_token", "codebuddy_uid"],
+      "descs_html": [
+        "请输入腾讯 CodeBuddy 授权的 AccessToken（通过 8088 面板添加账号获取，或设备授权获取）",
+        "请输入腾讯用户 UID（例如：YOUR-UID-HERE）"
+      ],
+      "settings": [
+        {
+          "id": "codebuddy_token",
+          "name": "Access Token",
+          "val": "",
+          "type": "textarea",
+          "placeholder": "eyJhbGciOiJSUzI1NiIs...",
+          "desc": "腾讯 CodeBuddy 访问令牌（必填）"
+        },
+        {
+          "id": "codebuddy_uid",
+          "name": "用户 UID",
+          "val": "",
+          "type": "text",
+          "placeholder": "YOUR-UID-HERE",
+          "desc": "用户专属 UUID（必填）"
+        }
+      ],
+      "author": "@YueBtt",
+      "repo": "https://github.com/YueBtt/codebuddy-daily-task",
+      "icons": [
+        "https://raw.githubusercontent.com/DGZSbot/ai-icon/refs/heads/main/WorkBuddy.png",
+        "https://raw.githubusercontent.com/DGZSbot/ai-icon/refs/heads/main/WorkBuddy.png"
+      ],
+      "scripts": [
+        {
+          "name": "每日自动签到保活",
+          "script": "https://raw.githubusercontent.com/YueBtt/codebuddy-daily-task/main/codebuddy_checkin.js"
+        }
+      ]
+    }
+  ]
+}
